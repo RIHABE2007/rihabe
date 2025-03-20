@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application de Gestion de Classe</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        table input, table select {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5" id="content">
+    <h1>Application de Gestion de Classe</h1>
+    <form class="mt-4">
+        <div class="row mb-3">
+            <div class="col">
+                <label>Matière</label>
+                <input type="text" class="form-control" value="Informatique">
+            </div>
+            <div class="col">
+                <label>Email</label>
+                <input type="email" class="form-control" placeholder="Enter email">
+            </div>
+            <div class="col">
+                <label>Date</label>
+                <input type="date" class="form-control">
+            </div>
+            <div class="col">
+                <label>Prof</label>
+                <input type="text" class="form-control">
+            </div>
+        </div>
+    </form>
+
+    <table class="table table-bordered mt-4" id="table">
+        <thead>
+        <tr>
+            <th>Id</th>
+            <th>Code Massar</th>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Note</th>
+            <th>Appréciation</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+        <tfoot>
+        <tr>
+            <td colspan="4">Moyenne de la classe</td>
+            <td id="moyenne">0/20</td>
+            <td>Min: <span id="noteMin">0/20</span> - Max: <span id="noteMax">0/20</span></td>
+            <td></td>
+        </tr>
+        </tfoot>
+    </table>
+    <button class="btn btn-primary" id="addRow">Ajouter Ligne</button>
+    <button class="btn btn-success" id="generatePDF">Générer PDF</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+<script>
+    let rowCount = 0;
+
+    document.getElementById('addRow').addEventListener('click', () => {
+        rowCount++;
+        const table = document.querySelector('#table tbody');
+        const row = document.createElement('tr');
+        
+        row.innerHTML = `
+            <td>${rowCount}</td>
+            <td><input type="text" class="form-control massar-code" placeholder="Code Massar"></td>
+            <td><input type="text" class="form-control"></td>
+            <td><input type="text" class="form-control"></td>
+            <td><input type="number" class="form-control note" min="0" max="20"></td>
+            <td><select class="form-control appreciation">
+                <option value="N/A">N/A</option>
+                <option value="Passable">Passable</option>
+                <option value="A. Bien">A. Bien</option>
+                <option value="Bien">Bien</option>
+                <option value="T. Bien">T. Bien</option>
+            </select></td>
+            <td><button class="btn btn-danger delete-row">-</button></td>
+        `;
+
+        table.appendChild(row);
+        updateCalculations();
+    });
+
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('delete-row')) {
+            event.target.closest('tr').remove();
+            updateCalculations();
+        }
+    });
+
+    document.addEventListener('input', function(event) {
+        if (event.target.classList.contains('note')) {
+            const note = parseFloat(event.target.value);
+            const appreciationSelect = event.target.closest('tr').querySelector('.appreciation');
+
+            if (note >= 16) appreciationSelect.value = 'T. Bien';
+            else if (note >= 14) appreciationSelect.value = 'Bien';
+            else if (note >= 12) appreciationSelect.value = 'A. Bien';
+            else if (note >= 10) appreciationSelect.value = 'Passable';
+            else appreciationSelect.value = 'N/A';
+
+            updateCalculations();
+        }
+    });
+
+    function updateCalculations() {
+        const notes = Array.from(document.querySelectorAll('.note')).map(input => parseFloat(input.value) || 0);
+        if (notes.length > 0) {
+            const sum = notes.reduce((a, b) => a + b, 0);
+            const moyenne = (sum / notes.length).toFixed(2);
+            const noteMin = Math.min(...notes);
+            const noteMax = Math.max(...notes);
+
+            document.getElementById('moyenne').innerText = moyenne + '/20';
+            document.getElementById('noteMin').innerText = noteMin + '/20';
+            document.getElementById('noteMax').innerText = noteMax + '/20';
+        }
+    }
+
+    document.getElementById('generatePDF').addEventListener('click', () => {
+        const element = document.getElementById('content');
+        html2pdf().from(element).save('Classe.pdf');
+    });
+</script>
+</body>
+</html>
